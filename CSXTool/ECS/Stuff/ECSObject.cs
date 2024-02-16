@@ -8,9 +8,9 @@ namespace CSXTool.ECS.Stuff
 
     public class ECSInteger : ECSObject
     {
-        public uint Value { get; set; }
+        public long Value { get; set; }
 
-        public ECSInteger(uint value)
+        public ECSInteger(long value)
         {
             Value = value;
         }
