@@ -7,6 +7,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using static System.Net.Mime.MediaTypeNames;
 
 #pragma warning disable CS8602
 #pragma warning disable CS8604
@@ -167,6 +168,30 @@ namespace CSXTool.ECS
 
                     if (csomType == CSObjectMode.csomImmediate && csvtType == CSVariableType.csvtString)
                     {
+                        string text;
+                        int addr;
+
+                        var length = reader.ReadUInt32();
+
+                        if (length != 0x80000000)
+                        {
+                            reader.BaseStream.Position -= 4;
+                            addr = cmd.Addr;
+                            text = reader.ReadWideString();
+                        }
+                        else
+                        {
+                            var index = reader.ReadInt32();
+                            text = m_extConstStr[index].Tag;
+                            addr = (int)(index | 0x80000000);
+                        }
+
+                        if (text.Length > 0)
+                        {
+                            writer.WriteLine("◇{0:X8}◇{1}", addr, text);
+                            writer.WriteLine("◆{0:X8}◆{1}", addr, text);
+                            writer.WriteLine();
+                        }
                     }
                 }
             }
