@@ -186,6 +186,8 @@ namespace CSXTool.ECS
                             addr = (int)(index | 0x80000000);
                         }
 
+                        text = text.Escape();
+
                         if (text.Length > 0)
                         {
                             writer.WriteLine("◇{0:X8}◇{1}", addr, text);
