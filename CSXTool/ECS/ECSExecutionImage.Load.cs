@@ -41,6 +41,9 @@ namespace CSXTool.ECS
                     case 0x2020202061746164u: // "data"
                         ReadDataSection(reader, size);
                         break;
+                    case 0x72747374736E6F63u: // "conststr"
+                        ReadConstantStringSection(reader, size);
+                        break;
                     case 0x20666E696B6E696Cu: // "linkinf"
                         ReadLinkInformationSection(reader, size);
                         break;
@@ -133,6 +136,28 @@ namespace CSXTool.ECS
                         m_csgData.Add(name, obj);
                     }
                 }
+            }
+        }
+
+        private void ReadConstantStringSection(BinaryReader reader, long size)
+        {
+            var count = reader.ReadInt32();
+
+            if (count > 0)
+            {
+                m_extConstStr = new TaggedRefAddressList(count);
+
+                for (var i = 0; i < count; i++)
+                {
+                    var str = reader.ReadWideString();
+                    var refs = ReadDWordArray(reader);
+
+                    m_extConstStr.Add(str, refs);
+                }
+            }
+            else
+            {
+                m_extConstStr = new();
             }
         }
 

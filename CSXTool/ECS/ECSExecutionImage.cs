@@ -22,6 +22,7 @@ namespace CSXTool.ECS
         private List<FunctionNameItem>? m_FunctionList; // 関数名連想アドレス配列
         private ECSGlobal? m_csgGlobal;                 // 大域変数、名前・型情報
         private ECSGlobal? m_csgData;                   // 大域定数、名前・型情報
+        private TaggedRefAddressList? m_extConstStr;    // 固定文字列参照
         // リンク用データ
         // ※コードイメージ上から各記憶クラスに対して参照している
         // 　コードイメージ上の位置を記録した配列

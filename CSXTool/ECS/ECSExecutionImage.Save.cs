@@ -30,6 +30,9 @@ namespace CSXTool.ECS
             WriteSection(writer, 0x20206C61626F6C67u, WriteGlobalSection);
             // "data"
             WriteSection(writer, 0x2020202061746164u, WriteDataSection);
+            // "conststr"
+            if (m_extConstStr != null)
+                WriteSection(writer, 0x72747374736E6F63u, WriteConstantStringSection);
             // "linkinf"
             WriteSection(writer, 0x20666E696B6E696Cu, WriteLinkInformationSection);
 
@@ -109,6 +112,18 @@ namespace CSXTool.ECS
                     writer.Write(0x80000000);
                     WriteObject(writer, e.Obj);
                 }
+            }
+        }
+
+        private void WriteConstantStringSection(BinaryWriter writer)
+        {
+            writer.Write(m_extConstStr.Count);
+
+            for (var i = 0; i < m_extConstStr.Count; i++)
+            {
+                var e = m_extConstStr[i];
+                writer.WriteWideString(e.Tag);
+                WriteDWordArray(writer, e.Refs);
             }
         }
 
