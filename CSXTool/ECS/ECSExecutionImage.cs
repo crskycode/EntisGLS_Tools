@@ -45,7 +45,7 @@ namespace CSXTool.ECS
         {
             Console.WriteLine("Parsing code...");
 
-            var disasm = new ECSExecutionImageDisassembler(m_Image, m_FunctionList, null);
+            var disasm = new ECSExecutionImageDisassembler(m_Image, m_FunctionList, m_extConstStr, null);
             disasm.Execute();
 
             var stream = new MemoryStream(m_Image);
@@ -127,7 +127,7 @@ namespace CSXTool.ECS
         {
             Console.WriteLine("Parsing code...");
 
-            var disasm = new ECSExecutionImageDisassembler(m_Image, m_FunctionList, null);
+            var disasm = new ECSExecutionImageDisassembler(m_Image, m_FunctionList, m_extConstStr, null);
             disasm.Execute();
 
             var stream = new MemoryStream(m_Image);
@@ -172,7 +172,7 @@ namespace CSXTool.ECS
 
             Console.WriteLine("Generating disassembly...");
 
-            var disasm = new ECSExecutionImageDisassembler(m_Image, m_FunctionList, writer);
+            var disasm = new ECSExecutionImageDisassembler(m_Image, m_FunctionList, m_extConstStr, writer);
             disasm.Execute();
 
             writer.Flush();
@@ -378,7 +378,7 @@ namespace CSXTool.ECS
 
             Console.WriteLine("Parsing code...");
 
-            var disasm = new ECSExecutionImageDisassembler(m_Image, m_FunctionList, null);
+            var disasm = new ECSExecutionImageDisassembler(m_Image, m_FunctionList, m_extConstStr, null);
             disasm.Execute();
 
             Console.WriteLine("Preparing to rebuild...");

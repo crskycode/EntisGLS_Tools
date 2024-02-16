@@ -12,17 +12,19 @@ namespace CSXTool.ECS
     {
         private readonly MemoryStream _stream;
         private readonly BinaryReader _reader;
+        private readonly TaggedRefAddressList? _constStr;
         private readonly ECSExecutionImageAssembly _assembly;
         private readonly StreamWriter? _writer;
 
         private int _addr;
         private CSInstructionCode _code;
 
-        public ECSExecutionImageDisassembler(byte[] data, List<FunctionNameItem> functionList, StreamWriter? writer)
+        public ECSExecutionImageDisassembler(byte[] data, List<FunctionNameItem> functionList, TaggedRefAddressList? constStr, StreamWriter? writer)
         {
             // input
             _stream = new MemoryStream(data);
             _reader = new BinaryReader(_stream);
+            _constStr = constStr;
             // output
             _assembly = new ECSExecutionImageAssembly();
             _writer = writer;
@@ -103,6 +105,28 @@ namespace CSXTool.ECS
             _writer?.Flush();
         }
 
+        private string GetStringLiteral(out int index)
+        {
+            var length = _reader.ReadUInt32();
+
+            if (length != 0x80000000)
+            {
+                _reader.BaseStream.Position -= 4;
+                index = -1;
+                return _reader.ReadWideString();
+            }
+            else
+            {
+                index = _reader.ReadInt32();
+                return _constStr[index].Tag;
+            }
+        }
+
+        private string GetStringLiteral()
+        {
+            return GetStringLiteral(out _);
+        }
+
         // 0x00 : New
         // Desc : Create a new variable.
         private void CommandNew()
@@ -112,9 +136,9 @@ namespace CSXTool.ECS
 
             var className = string.Empty;
             if (csvtType == CSVariableType.csvtObject)
-                className = _reader.ReadWideString();
+                className = GetStringLiteral();
 
-            var name = _reader.ReadWideString();
+            var name = GetStringLiteral();
 
             var pObj = string.Empty;
 
@@ -159,7 +183,7 @@ namespace CSXTool.ECS
                     case CSVariableType.csvtObject:
                     {
                         // Create a new object.
-                        var className = _reader.ReadWideString();
+                        var className = GetStringLiteral();
                         Line($"Load * {className}");
                         break;
                     }
@@ -198,8 +222,13 @@ namespace CSXTool.ECS
                     case CSVariableType.csvtString:
                     {
                         // Create new string object.
-                        var value = _reader.ReadWideString();
+                        var value = GetStringLiteral(out int index);
+
+                        if (index != -1)
+                            Line($"Load Const String {index} \"{value.Escape()}\"");
+                        else
                         Line($"Load String \"{value.Escape()}\"");
+
                         break;
                     }
                     default:
@@ -250,7 +279,7 @@ namespace CSXTool.ECS
                     case CSVariableType.csvtString:
                     {
                         // Find property or element by name.
-                        var name = _reader.ReadWideString();
+                        var name = GetStringLiteral();
                         Line($"Load {pObj} [\"{name}\"]");
                         break;
                     }
@@ -312,7 +341,7 @@ namespace CSXTool.ECS
         // Desc : Enter into a namespace
         private void CommandEnter()
         {
-            var name = _reader.ReadWideString();
+            var name = GetStringLiteral();
             var numArgs = _reader.ReadInt32();
 
             if (numArgs != -1)
@@ -327,9 +356,9 @@ namespace CSXTool.ECS
 
                     var className = string.Empty;
                     if (csvtType == CSVariableType.csvtObject)
-                        className = _reader.ReadWideString();
+                        className = GetStringLiteral();
 
-                    var varName = _reader.ReadWideString();
+                    var varName = GetStringLiteral();
 
                     if (string.IsNullOrEmpty(className))
                         sb.Append(varName);
@@ -395,7 +424,7 @@ namespace CSXTool.ECS
         {
             var csomType = (CSObjectMode)_reader.ReadByte();
             var numArgs = _reader.ReadInt32();
-            var funcName = _reader.ReadWideString();
+            var funcName = GetStringLiteral();
 
             var pObj = string.Empty;
 
@@ -442,7 +471,7 @@ namespace CSXTool.ECS
                 }
                 case CSVariableType.csvtString:
                 {
-                    var name = _reader.ReadWideString();
+                    var name = GetStringLiteral();
                     Line($"Element \"{name}\"");
                     break;
                 }
