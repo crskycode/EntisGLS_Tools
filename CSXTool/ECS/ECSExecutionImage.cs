@@ -386,6 +386,19 @@ namespace CSXTool.ECS
             }
         }
 
+        private void UpdateConstantString(Dictionary<long, string> translation)
+        {
+            for (var i = 0; i < m_extConstStr.Count; i++)
+            {
+                var key = (uint)i | 0x80000000;
+
+                if (translation.TryGetValue(key, out string? text))
+                {
+                    m_extConstStr[i].Tag = text;
+                }
+            }
+        }
+
         public void ImportText(string filePath)
         {
             Console.WriteLine("Loading translation...");
@@ -422,6 +435,10 @@ namespace CSXTool.ECS
             Console.WriteLine("Fixing references...");
 
             FixReferences(commandMap);
+
+            Console.WriteLine("Updating constant string...");
+
+            UpdateConstantString(translation);
 
             Console.WriteLine("Rebuild finished.");
         }
