@@ -15,5 +15,7 @@ namespace CSXTool.ECS.Enums
         csvtInteger = 4,
         csvtReal = 5,
         csvtString = 6,
+        csvtInteger64 = 7,
+        csvtPointer = 8,
     }
 }

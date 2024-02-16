@@ -231,6 +231,20 @@ namespace CSXTool.ECS
 
                         break;
                     }
+                    case CSVariableType.csvtInteger64:
+                    {
+                        // Create new integer64 object.
+                        var value = _reader.ReadUInt64();
+                        Line($"Load Integer64 {value}");
+                        break;
+                    }
+                    case CSVariableType.csvtPointer:
+                    {
+                        // Create new integer64 object.
+                        var value = _reader.ReadUInt32();
+                        Line($"Load Pointer {value}");
+                        break;
+                    }
                     default:
                     {
                         throw new Exception("Unknow object type.");
