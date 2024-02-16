@@ -167,7 +167,7 @@ namespace CSXTool.ECS
             }
         }
 
-        private static void WriteObject(BinaryWriter writer, ECSObject obj)
+        private void WriteObject(BinaryWriter writer, ECSObject obj)
         {
             if (obj is ECSClassInfoObject v1)
             {
@@ -196,7 +196,11 @@ namespace CSXTool.ECS
             else if (obj is ECSInteger v5)
             {
                 writer.Write((int)CSVariableType.csvtInteger);
-                writer.Write((int)v5.Value);
+
+                if (m_Header.IntBase == 64)
+                    writer.Write(v5.Value);
+                else
+                    writer.Write((int)v5.Value);
             }
             else if (obj is ECSReal v6)
             {

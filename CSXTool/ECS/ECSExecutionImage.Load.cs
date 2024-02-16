@@ -233,7 +233,7 @@ namespace CSXTool.ECS
             }
         }
 
-        private static ECSObject ReadObject(BinaryReader reader)
+        private ECSObject ReadObject(BinaryReader reader)
         {
             var type = (CSVariableType)reader.ReadInt32();
 
@@ -279,7 +279,7 @@ namespace CSXTool.ECS
                 }
                 case CSVariableType.csvtInteger:
                 {
-                    var val = reader.ReadUInt32();
+                    var val = (m_Header.IntBase == 64) ? reader.ReadInt64() : reader.ReadUInt32();
                     var obj = new ECSInteger(val);
                     return obj;
                 }
