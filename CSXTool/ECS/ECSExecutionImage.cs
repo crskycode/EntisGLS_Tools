@@ -51,7 +51,7 @@ namespace CSXTool.ECS
             var stream = new MemoryStream(m_Image);
             var reader = new BinaryReader(stream);
 
-            var stack = new LinkedList<Tuple<int, string>>();
+            var stack = new List<Tuple<int, string>>(16);
 
             Console.WriteLine("Generating text...");
 
@@ -70,10 +70,10 @@ namespace CSXTool.ECS
                     {
                         var value = reader.ReadWideString();
 
-                        stack.AddFirst(Tuple.Create(cmd.Addr, value));
+                        stack.Insert(0, Tuple.Create(cmd.Addr, value));
 
                         if (stack.Count > 8)
-                            stack.RemoveLast();
+                            stack.RemoveAt(8);
                     }
                 }
                 else if (cmd.Code == CSInstructionCode.csicCall)
@@ -88,8 +88,8 @@ namespace CSXTool.ECS
                     {
                         if (funcName == "Mess" || funcName == "SceneTitle")
                         {
-                            var addr = stack.First().Item1;
-                            var text = stack.First().Item2.Escape();
+                            var addr = stack[0].Item1;
+                            var text = stack[0].Item2.Escape();
 
                             if (text.Length > 0 && text != "「" && text != "」" && !text.StartsWith('@'))
                             {
@@ -103,8 +103,8 @@ namespace CSXTool.ECS
                     {
                         if (funcName == "Talk" || funcName == "AddSelect")
                         {
-                            var addr = stack.First().Item1;
-                            var text = stack.First().Item2.Escape();
+                            var addr = stack[0].Item1;
+                            var text = stack[0].Item2.Escape();
 
                             if (text.Length > 0)
                             {
