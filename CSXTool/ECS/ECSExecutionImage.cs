@@ -34,6 +34,9 @@ namespace CSXTool.ECS
 
         public ECSExecutionImage()
         {
+            m_FunctionList = [];
+            m_csgGlobal = new();
+            m_csgData = new();
         }
 
         public void ExportText(string filePath)
