@@ -167,13 +167,6 @@ namespace CSXTool.ECS
 
                     if (csomType == CSObjectMode.csomImmediate && csvtType == CSVariableType.csvtString)
                     {
-                        var text = reader.ReadWideString().Escape();
-
-                        // writer.WriteLine("◇{0:X8}◇{1}", cmd.Addr, text);
-                        // writer.WriteLine("◆{0:X8}◆{1}", cmd.Addr, text);
-                        // writer.WriteLine();
-
-                        writer.WriteLine("{0:X8} | \"{1}\"", cmd.Addr, text);
                     }
                 }
             }
