@@ -63,6 +63,14 @@ namespace CSXTool.ECS
         private void ReadHeaderSection(BinaryReader reader, long size)
         {
             m_exiHeader = reader.ReadBytes(Convert.ToInt32(size));
+
+            // Compatibility
+
+            if (m_exiHeader.Length >= 4)
+                m_Header.Version = BitConverter.ToUInt32(m_exiHeader, 0);
+
+            if (m_exiHeader.Length >= 8)
+                m_Header.IntBase = BitConverter.ToUInt32(m_exiHeader, 4);
         }
 
         private void ReadImageSection(BinaryReader reader, long size)
