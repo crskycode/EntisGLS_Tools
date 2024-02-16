@@ -68,9 +68,25 @@ namespace CSXTool.ECS
 
                     if (csomType == CSObjectMode.csomImmediate && csvtType == CSVariableType.csvtString)
                     {
-                        var value = reader.ReadWideString();
+                        string value;
+                        int addr;
 
-                        stack.Insert(0, Tuple.Create(cmd.Addr, value));
+                        var length = reader.ReadUInt32();
+
+                        if (length != 0x80000000)
+                        {
+                            reader.BaseStream.Position -= 4;
+                            addr = cmd.Addr;
+                            value = reader.ReadWideString();
+                        }
+                        else
+                        {
+                            var index = reader.ReadInt32();
+                            value = m_extConstStr[index].Tag;
+                            addr = (int)(index | 0x80000000);
+                        }
+
+                        stack.Insert(0, Tuple.Create(addr, value));
 
                         if (stack.Count > 8)
                             stack.RemoveAt(8);
