@@ -227,7 +227,7 @@ namespace CSXTool.ECS
                         if (index != -1)
                             Line($"Load Const String {index} \"{value.Escape()}\"");
                         else
-                        Line($"Load String \"{value.Escape()}\"");
+                            Line($"Load String \"{value.Escape()}\"");
 
                         break;
                     }
@@ -450,6 +450,9 @@ namespace CSXTool.ECS
                     break;
                 case CSObjectMode.csomThis:
                     pObj = "this";
+                    break;
+                case CSObjectMode.csomGlobal:
+                    pObj = "global";
                     break;
                 case CSObjectMode.csomAuto:
                     pObj = "auto";
