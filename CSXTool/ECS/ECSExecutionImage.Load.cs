@@ -29,6 +29,9 @@ namespace CSXTool.ECS
 
                 switch (id)
                 {
+                    case 0x2020726564616568u: // "header"
+                        ReadHeaderSection(reader, size);
+                        break;
                     case 0x2020206567616D69u: // "image"
                         ReadImageSection(reader, size);
                         break;
@@ -55,6 +58,11 @@ namespace CSXTool.ECS
             Debug.Assert(reader.BaseStream.Position == reader.BaseStream.Length);
 
             reader.Dispose();
+        }
+
+        private void ReadHeaderSection(BinaryReader reader, long size)
+        {
+            m_exiHeader = reader.ReadBytes(Convert.ToInt32(size));
         }
 
         private void ReadImageSection(BinaryReader reader, long size)

@@ -22,6 +22,9 @@ namespace CSXTool.ECS
             writer.Write(m_FileHeader.Reserved);
             writer.Write(m_FileHeader.FormatDescription);
 
+            // "header"
+            if (m_exiHeader != null)
+                WriteSection(writer, 0x2020726564616568u, WriteHeaderSection);
             // "image"
             WriteSection(writer, 0x2020206567616D69u, WriteImageSection);
             // "function"
@@ -52,6 +55,11 @@ namespace CSXTool.ECS
             writer.BaseStream.Position = v1;
             writer.Write(size);
             writer.BaseStream.Position = v3;
+        }
+
+        private void WriteHeaderSection(BinaryWriter writer)
+        {
+            writer.Write(m_exiHeader);
         }
 
         private void WriteImageSection(BinaryWriter writer)

@@ -16,6 +16,7 @@ namespace CSXTool.ECS
     public partial class ECSExecutionImage
     {
         private EMCFileHeader? m_FileHeader;
+        private byte[]? m_exiHeader;                    // ヘッダー
         private byte[]? m_Image;                        // 実行イメージバッファ
         private List<int>? m_pifPrologue;               // 初期化関数アドレス
         private List<int>? m_pifEpilogue;               // 終了関数アドレス
