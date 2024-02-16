@@ -89,6 +89,8 @@ namespace CSXTool.ECS
                             addr = (int)(index | 0x80000000);
                         }
 
+                        value = value.Escape();
+
                         stack.Insert(0, Tuple.Create(addr, value));
 
                         if (stack.Count > 8)
