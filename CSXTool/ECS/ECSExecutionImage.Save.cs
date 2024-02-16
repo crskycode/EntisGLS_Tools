@@ -196,7 +196,7 @@ namespace CSXTool.ECS
             else if (obj is ECSInteger v5)
             {
                 writer.Write((int)CSVariableType.csvtInteger);
-                writer.Write(v5.Value);
+                writer.Write((int)v5.Value);
             }
             else if (obj is ECSReal v6)
             {
