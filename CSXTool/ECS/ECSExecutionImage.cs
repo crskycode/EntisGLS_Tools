@@ -412,6 +412,9 @@ namespace CSXTool.ECS
 
         private void UpdateConstantString(Dictionary<long, string> translation)
         {
+            if (m_extConstStr == null)
+                return;
+
             for (var i = 0; i < m_extConstStr.Count; i++)
             {
                 var key = (uint)i | 0x80000000;
