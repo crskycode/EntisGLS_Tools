@@ -1,0 +1,505 @@
+//------------------------------------------------
+//--- 010 Editor v14.0 Binary Template
+//
+//      File: CSX.bt
+//   Authors: Crsky
+//   Version: 1.0
+//   Purpose: Entis Execution Image File
+//  Category: Programming
+// File Mask: *.csx
+//  ID Bytes: 45 6E 74 69 73 1A 00 00
+//   History: 
+//------------------------------------------------
+
+int CountRecords(int64 pos, int64 end) {
+    local int count = 0;
+    local int64 id = 0;
+    local int64 length = 0;
+    while (pos < end) {
+        id = ReadInt64(pos);
+        if (id == 0) {
+            break;
+        }
+        length = ReadInt64(pos + 8);
+        pos += 16 + length;
+        count++;
+    }
+    return count;
+}
+
+struct WIDE_STRING;
+struct TYPED_OBJECT;
+struct TYPE_INFO;
+
+wstring GetWideStringComment(WIDE_STRING& s) {
+    if (s.Length > 0) {
+        return "\"" + s.Data + "\"";
+    } else {
+        return L"\"\"";
+    }
+}
+
+wstring GetTypedObjectComment(TYPED_OBJECT& obj) {
+    switch (obj.Type) {
+        case -1: return L"Invalid";
+        case 0: return L"csvtObject";
+        case 1: return L"csvtReference";
+        case 2: return L"csvtArray";
+        case 3: return L"csvtHash";
+        case 4: return L"csvtInteger";
+        case 5: return L"csvtReal";
+        case 6: return L"csvtString";
+        case 7: return L"csvtInteger64";
+        case 8: return L"csvtPointer";
+        case 9: return L"csvtClassObject";
+        case 10: return L"csvtBoolean";
+        case 11: return L"csvtInt8";
+        case 12: return L"csvtUint8";
+        case 13: return L"csvtInt16";
+        case 14: return L"csvtUint16";
+        case 15: return L"csvtInt32";
+        case 16: return L"csvtUint32";
+        case 17: return L"csvtArrayDimension";
+        case 18: return L"csvtHashContainer";
+        case 19: return L"csvtReal32";
+        case 20: return L"csvtReal64";
+        case 21: return L"csvtPointerReference";
+        case 22: return L"csvtBuffer";
+        case 23: return L"csvtFunction";
+        default: {
+            Assert(0, "Unknow object type.");
+        }
+    }
+}
+
+wstring GetTypeInfoComment(TYPE_INFO& info) {
+    return GetTypedObjectComment(info.TypedObject);
+}
+
+struct RECORD_HEADER {
+    char Id[8];
+    int64 Length;
+};
+
+struct DWORD_ARRAY {
+    int Count;
+    if (Count > 0) {
+        uint32 ElemList[Count];
+    }
+};
+
+struct WIDE_STRING {
+    int Length;
+    if (Length > 0) {
+        wchar_t Data[Length];
+    }
+};
+
+struct WIDE_STRING_ARRAY {
+    int Count;
+    if (Count > 0) {
+        WIDE_STRING ElemList[Count] <optimize=false, comment=GetWideStringComment>;
+    }
+};
+
+struct TAGED_DWORD_ARRAY_ITEM {
+    WIDE_STRING Tag <comment=GetWideStringComment>;
+    DWORD_ARRAY Refs;
+};
+
+struct TAGED_DWORD_ARRAY {
+    int Count;
+    if (Count > 0) {
+        TAGED_DWORD_ARRAY_ITEM ElemList[Count] <optimize=false>;
+    }
+};
+
+struct ECS_CAST_INTERFACE {
+    union {
+        int CastObject;
+        int NativeParent;
+    } u;
+    int VarOffset;
+    int VarBounds;
+    int FuncOffset;
+};
+
+struct CLASS_INFO_OBJECT {
+    WIDE_STRING ClassName <comment=GetWideStringComment>;
+};
+
+struct ARRAY_OBJECT {
+    int Length;
+    if (Length > 0) {
+        TYPED_OBJECT ElemList[Length] <optimize=false>;
+    }
+};
+
+struct POINTER_OBJECT {
+    int m_csvtRefType;
+    byte ReadOnly;
+    TYPED_OBJECT RefType;
+};
+
+struct ARRAY_DIMENSION_OBJECT {
+    TYPED_OBJECT ElementType <comment=GetTypedObjectComment>;
+    int Dim;
+    int Bounds[Dim];
+    int Length;
+    if (Length > 0) {
+        TYPED_OBJECT ElemList[Length] <optimize=false, comment=GetTypedObjectComment>;
+    }
+};
+
+struct HASH_CONTAINER_OBJECT {
+    TYPED_OBJECT ElementType <comment=GetTypedObjectComment>;
+};
+
+struct TYPED_OBJECT {
+    int Type;
+
+    if (Type == -1) { // Invalid
+        // No Data
+    } else if (Type == 0) { // csvtObject
+        CLASS_INFO_OBJECT Data;
+    } else if (Type == 1) { // csvtReference
+        TYPED_OBJECT Data;
+    } else if (Type == 2) { // csvtArray
+        ARRAY_OBJECT Data;
+    } else if (Type == 3) { // csvtHash
+        // No Data
+    } else if (Type == 4) { // csvtInteger
+        int64 Value;
+    } else if (Type == 5) { // csvtReal
+        double Value;
+    } else if (Type == 6) { // csvtString
+        WIDE_STRING Data;
+    } else if (Type == 7) { // csvtInteger64
+        int64 Data;
+    } else if (Type == 8) { // csvtPointer
+        POINTER_OBJECT Data;
+    } else if (Type == 9) { // csvtClassObject
+        Assert(0, "Not implemented.");
+    } else if (Type == 10) { // csvtBoolean
+        int64 Value;
+    } else if (Type == 11) { // csvtInt8
+        int64 Value;
+    } else if (Type == 12) { // csvtUint8
+        int64 Value;
+    } else if (Type == 13) { // csvtInt16
+        int64 Value;
+    } else if (Type == 14) { // csvtUint16
+        int64 Value;
+    } else if (Type == 15) { // csvtInt32
+        int64 Value;
+    } else if (Type == 16) { // csvtUint32
+        int64 Value;
+    } else if (Type == 17) { // csvtArrayDimension
+        ARRAY_DIMENSION_OBJECT Data;
+    } else if (Type == 18) { // csvtHashContainer
+        HASH_CONTAINER_OBJECT Data;
+    } else if (Type == 19) { // csvtReal32
+        int64 Value;
+    } else if (Type == 20) { // csvtReal64
+        double Value;
+    } else if (Type == 21) { // csvtPointerReference
+        Assert(0, "Not implemented.");
+    } else if (Type == 22) { // csvtBuffer
+        Assert(0, "Not implemented.");
+    } else if (Type == 23) { // csvtFunction
+        Assert(0, "Not implemented.");
+    } else {
+        Assert(0, "Unknow object type.");
+    }
+};
+
+struct TYPE_INFO {
+    uint Flags;
+    TYPED_OBJECT TypedObject;
+};
+
+struct PROTOTYPE_INFO {
+    uint Flags;
+    WIDE_STRING Name <comment=GetWideStringComment>;
+    WIDE_STRING GlobalName <comment=GetWideStringComment>;
+    TYPE_INFO ReturnType <comment=GetTypeInfoComment>;
+    int ArgCount;
+    if (ArgCount > 0) {
+        TYPE_INFO ArgList[ArgCount] <optimize=false, comment=GetTypeInfoComment>;
+    }
+};
+
+struct BASECLASS_INFO_ENTRY {
+    uint Flags;
+    WIDE_STRING Name <comment=GetWideStringComment>;
+};
+
+struct BASECLASS_CAST_INFO_ENTRY {
+    WIDE_STRING Name <comment=GetWideStringComment>;
+    ECS_CAST_INTERFACE pci;
+    uint Flags;
+};
+
+struct FIELD_INFO_ENTRY {
+    WIDE_STRING Name <comment=GetWideStringComment>;
+    uint Flags;
+    TYPED_OBJECT Type <comment=GetTypedObjectComment>;
+};
+
+struct METHOD_INFO_ENTRY {
+    PROTOTYPE_INFO Prototype;
+    WIDE_STRING FuncClass <comment=GetWideStringComment>;
+    byte PointerData[40]; // ECS_FUNCTION_POINTER
+};
+
+struct CLASS_INFO_ENTRY {
+    uint Flags;
+    WIDE_STRING Name <comment=GetWideStringComment>;
+    WIDE_STRING GlobalName <comment=GetWideStringComment>;
+    int ParentCount;
+    if (ParentCount > 0) {
+        BASECLASS_INFO_ENTRY BaseClassList[ParentCount] <optimize=false, comment=GetWideStringComment(Name)>;
+    }
+    int BaseClassCastCount;
+    if (BaseClassCastCount > 0) {
+        BASECLASS_CAST_INFO_ENTRY ParentClassCastList[BaseClassCastCount] <optimize=false, comment=GetWideStringComment(Name)>;
+    }
+    int FieldCount;
+    if (FieldCount > 0) {
+        FIELD_INFO_ENTRY FieldList[FieldCount] <optimize=false, comment=GetWideStringComment(Name)>;
+    }
+    int MethodCount;
+    if (MethodCount) {
+        METHOD_INFO_ENTRY MethodList[MethodCount] <optimize=false, comment=GetWideStringComment(Prototype.Name)>;
+    }
+    int ExtraDataSize;
+    if (ExtraDataSize > 0) {
+        byte ExtraData[ExtraDataSize];
+    }
+};
+
+struct CLASS_INFO_SECTION {
+    int Count;
+    if (Count > 0) {
+        WIDE_STRING NameList[Count] <optimize=false, comment=GetWideStringComment>;
+        CLASS_INFO_ENTRY InfoList[Count] <optimize=false, comment=GetWideStringComment(Name)>;
+    }
+};
+
+struct FUNC_NAME_ENTRY {
+    int Address;
+    WIDE_STRING Name <comment=GetWideStringComment>;
+};
+
+struct FUNCTION_SECTION {
+    DWORD_ARRAY Prologue;
+    DWORD_ARRAY Epilogue;
+    int Count;
+    if (Count > 0) {
+        FUNC_NAME_ENTRY NameList[Count] <optimize=false, comment=GetWideStringComment(Name)>;
+    }
+};
+
+struct INIT_FUNC_SECTION {
+    DWORD_ARRAY NakedPrologue;
+    DWORD_ARRAY NakedEpilogue;
+};
+
+struct FUNC_ENTRY_HEADER {
+    uint Flags;
+    uint Address;
+    uint Bytes;
+    uint Reserved;
+};
+
+struct FUNC_INFO_ENTRY {
+    FUNC_ENTRY_HEADER Header;
+    WIDE_STRING Name <comment=GetWideStringComment>;
+    if (Header.Reserved != 0) {
+        byte Reserved[Header.Reserved];
+    }
+};
+
+struct FUNC_INFO_SECTION {
+    int Count;
+    if (Count > 0) {
+        FUNC_INFO_ENTRY List[Count] <optimize=false, comment=GetWideStringComment(Name)>;
+    }
+};
+
+struct NAKED_SYMBOL_INFO {
+    uint Flags;
+    uint Reserved;
+    int64 Address;
+};
+
+struct SYMBOL_INFO_ENTRY {
+    NAKED_SYMBOL_INFO Info;
+    WIDE_STRING Name <comment=GetWideStringComment>;
+};
+
+struct SYMBOL_INFO_SECTION {
+    int Count;
+    if (Count > 0) {
+        SYMBOL_INFO_ENTRY List[Count] <optimize=false, comment=GetWideStringComment(Name)>;
+    }
+};
+
+struct TAGED_OBJECT_ENTRY {
+    WIDE_STRING Name <comment=GetWideStringComment>;
+    TYPED_OBJECT Object <comment=GetTypedObjectComment>;
+};
+
+struct GLOBAL_SECTION {
+    int Count;
+    if (Count > 0) {
+        TAGED_OBJECT_ENTRY List[Count] <optimize=false, comment=GetWideStringComment(Name)>;
+    }
+};
+
+struct GLOBAL_OBJECT_ENTRY {
+    WIDE_STRING Name <comment=GetWideStringComment>;
+    int Length;
+    if (Length >= 0) {
+        TAGED_OBJECT_ENTRY ObjectList[Length] <optimize=false, comment=GetWideStringComment(Name)>;
+    } else {
+        TYPED_OBJECT Object;
+    }
+};
+
+struct DATA_SECTION {
+    int Count;
+    if (Count > 0) {
+        GLOBAL_OBJECT_ENTRY List[Count] <optimize=false, comment=GetWideStringComment(Name)>;
+    }
+};
+
+struct CONST_STR_ENTRY {
+    WIDE_STRING String <comment=GetWideStringComment>;
+    DWORD_ARRAY Ref;
+};
+
+struct CONST_STR_SECTION {
+    int Count;
+    if (Count > 0) {
+        CONST_STR_ENTRY List[Count] <optimize=false, comment=GetWideStringComment(String)>;
+    }
+};
+
+struct LINK_INFO_SECTION {
+    DWORD_ARRAY ExtGlobalRef;
+    DWORD_ARRAY ExtDataRef;
+    TAGED_DWORD_ARRAY ImpGlobalRef;
+    TAGED_DWORD_ARRAY ImpDataRef;
+};
+
+struct LINK_EX64_SECTION {
+    uint Flags;
+    DWORD_ARRAY ExtNakedGlobalRef;
+    DWORD_ARRAY ExtNakedConstRef;
+    DWORD_ARRAY ExtNakedSharedRef;
+    if (Flags & 8) {
+        DWORD_ARRAY ExtNakedFuncRef;
+    }
+    TAGED_DWORD_ARRAY ImpNakedGlobalRef;
+    TAGED_DWORD_ARRAY ImpNakedConstRef;
+    TAGED_DWORD_ARRAY ImpNakedSharedRef;
+    if (Flags & 0x80000) {
+        TAGED_DWORD_ARRAY ImpNakedFuncRef;
+    }
+};
+
+struct REFFUNC_SECTION {
+    TAGED_DWORD_ARRAY Ref;
+};
+
+struct REFCODE_SECTION {
+    DWORD_ARRAY Ref;
+};
+
+struct REFCLASS_SECTION {
+    DWORD_ARRAY Ref;
+};
+
+struct NATIVE_FUNC_SECTION {
+    WIDE_STRING_ARRAY Name;
+    DWORD_ARRAY Address;
+};
+
+struct NAKED_FUNC_SECTION {
+    WIDE_STRING_ARRAY Name;
+    DWORD_ARRAY Address;
+};
+
+struct IMPORT_NATIVE_FUNC_RECORD {
+    RECORD_HEADER Header;
+    if (Strcmp(Header.Id, "nativfnc") == 0) {
+        NATIVE_FUNC_SECTION Data;
+    } else if (Strcmp(Header.Id, "nakedfnc") == 0) {
+        NAKED_FUNC_SECTION Data;
+    } else {
+        byte Data[Header.Length] <optimize=false>;
+    }
+};
+
+struct IMPORT_NATIVE_FUNC_SECTION(int64 length) {
+    local int pos = FTell();
+    local int end = pos + length;
+    local int count = CountRecords(pos, end);
+    IMPORT_NATIVE_FUNC_RECORD RecordList[count] <optimize=false>;
+};
+
+struct FILE_HEADER {
+    byte Magic[8];
+    int FileId;
+    int Reserved;
+    byte FormatDescription[0x30];
+};
+
+struct RECORD_INFO {
+    RECORD_HEADER Header <bgcolor=0x62CD3C>;
+
+    if (Strcmp(Header.Id, "classinf") == 0) {
+        CLASS_INFO_SECTION Data;
+    } else if (Strcmp(Header.Id, "function") == 0) {
+        FUNCTION_SECTION Data;
+    } else if (Strcmp(Header.Id, "initnfnc") == 0) {
+        INIT_FUNC_SECTION Data;
+    } else if (Strcmp(Header.Id, "funcinfo") == 0) {
+        FUNC_INFO_SECTION Data;
+    } else if (Strcmp(Header.Id, "symblinf") == 0) {
+        SYMBOL_INFO_SECTION Data;
+    } else if (Strcmp(Header.Id, "global  ") == 0) {
+        GLOBAL_SECTION Data;
+    } else if (Strcmp(Header.Id, "data    ") == 0) {
+        DATA_SECTION Data;
+    } else if (Strcmp(Header.Id, "conststr") == 0) {
+        CONST_STR_SECTION Data;
+    } else if (Strcmp(Header.Id, "linkinf ") == 0) {
+        LINK_INFO_SECTION Data;
+    } else if (Strcmp(Header.Id, "linkex64") == 0) {
+        LINK_EX64_SECTION Data;
+    } else if (Strcmp(Header.Id, "reffunc ") == 0) {
+        REFFUNC_SECTION Data;
+    } else if (Strcmp(Header.Id, "refcode ") == 0) {
+        REFCODE_SECTION Data;
+    } else if (Strcmp(Header.Id, "refclass") == 0) {
+        REFCLASS_SECTION Data;
+    } else if (Strcmp(Header.Id, "impnativ") == 0) {
+        IMPORT_NATIVE_FUNC_SECTION Data(Header.Length);
+    } else {
+        byte Data[Header.Length] <optimize=false>;
+    }
+};
+
+struct CSX_FILE {
+    FILE_HEADER Header <bgcolor=0xFF54C5>;
+
+    // Count records
+    local int count = CountRecords(FTell(), FileSize());
+
+    // Read records
+    RECORD_INFO RecordList[count] <optimize=false, comment=Header.Id>;
+};
+
+CSX_FILE CSXFile;
