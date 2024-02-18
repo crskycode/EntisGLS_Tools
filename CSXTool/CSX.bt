@@ -124,6 +124,54 @@ struct ECS_CAST_INTERFACE {
     int FuncOffset;
 };
 
+local int g_Version = 0;
+local int g_IntegerSize = 0;
+
+struct HEADER_SECTION(int64 size) {
+    local int64 rem = size;
+    if (size >= 4) {
+        uint Version;
+        rem -= 4;
+        g_Version = Version;
+    }
+    if (size >= 8) {
+        uint IntegerSize;
+        rem -= 4;
+        g_IntegerSize = IntegerSize;
+    }
+    if (size >= 12) {
+        uint ContainerFlags;
+        rem -= 4;
+    }
+    if (size >= 16) {
+        uint Reserved;
+        rem -= 4;
+    }
+    if (size >= 20) {
+        uint StackSize;
+        rem -= 4;
+    }
+    if (size >= 24) {
+        uint HeapSize;
+        rem -= 4;
+    }
+    if (size >= 28) {
+        uint EntryPoint;
+        rem -= 4;
+    }
+    if (size >= 32) {
+        uint StaticInitialize;
+        rem -= 4;
+    }
+    if (size >= 36) {
+        uint ResumePrepare;
+        rem -= 4;
+    }
+    if (rem > 0) {
+        byte Data[rem];
+    }
+};
+
 struct CLASS_INFO_OBJECT {
     WIDE_STRING ClassName <comment=GetWideStringComment>;
 };
@@ -163,13 +211,19 @@ struct TYPED_OBJECT {
     } else if (Type == 0) { // csvtObject
         CLASS_INFO_OBJECT Data;
     } else if (Type == 1) { // csvtReference
-        TYPED_OBJECT Data;
+        if (g_Version == 1) {
+            TYPED_OBJECT Data;
+        }
     } else if (Type == 2) { // csvtArray
         ARRAY_OBJECT Data;
     } else if (Type == 3) { // csvtHash
         // No Data
     } else if (Type == 4) { // csvtInteger
-        int64 Value;
+        if (g_IntegerSize == 64) {
+            int64 Value;
+        } else {
+            int32 Value;
+        }
     } else if (Type == 5) { // csvtReal
         double Value;
     } else if (Type == 6) { // csvtString
@@ -459,7 +513,9 @@ struct FILE_HEADER {
 struct RECORD_INFO {
     RECORD_HEADER Header <bgcolor=0x62CD3C>;
 
-    if (Strcmp(Header.Id, "classinf") == 0) {
+    if (Strcmp(Header.Id, "header  ") == 0) {
+        HEADER_SECTION Data(Header.Length);
+    } else if (Strcmp(Header.Id, "classinf") == 0) {
         CLASS_INFO_SECTION Data;
     } else if (Strcmp(Header.Id, "function") == 0) {
         FUNCTION_SECTION Data;
