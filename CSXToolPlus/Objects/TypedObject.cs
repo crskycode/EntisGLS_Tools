@@ -74,11 +74,14 @@ namespace CSXToolPlus.Objects
                 }
                 case CSVariableType.csvtInteger64:
                 {
+                    // NOTE: Read 1 Int64 in 《恋色マリアージュ》
+                    // NOTE: Read 2 Int64 in 《お兄ちゃん右手の使用を禁止します》
                     Data = reader.ReadInt64();
                     break;
                 }
                 case CSVariableType.csvtPointer:
                 {
+                    // NOTE: No data in 《恋色マリアージュ》
                     var obj = new PointerObject();
                     obj.Read(reader);
                     Data = obj;
