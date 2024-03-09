@@ -9,7 +9,7 @@ namespace CSXToolPlus
         {
             if (args.Length < 2)
             {
-                Console.WriteLine("CSXToolPlus v1.0");
+                Console.WriteLine("CSXToolPlus v1.1");
                 Console.WriteLine("  created by Crsky");
                 Console.WriteLine();
                 Console.WriteLine("Usage:");
