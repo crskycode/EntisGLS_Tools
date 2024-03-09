@@ -76,15 +76,27 @@ namespace CSXToolPlus.Objects
                 {
                     // NOTE: Read 1 Int64 in 《恋色マリアージュ》
                     // NOTE: Read 2 Int64 in 《お兄ちゃん右手の使用を禁止します》
-                    Data = reader.ReadInt64();
+                    if (reader.Info.FullVer == 3)
+                    {
+                        var obj = new Integer64Object();
+                        obj.Read(reader);
+                        Data = obj;
+                    }
+                    else
+                    {
+                        Data = reader.ReadInt64();
+                    }
                     break;
                 }
                 case CSVariableType.csvtPointer:
                 {
                     // NOTE: No data in 《恋色マリアージュ》
-                    var obj = new PointerObject();
-                    obj.Read(reader);
-                    Data = obj;
+                    if (reader.Info.FullVer == 3)
+                    {
+                        var obj = new PointerObject();
+                        obj.Read(reader);
+                        Data = obj;
+                    }
                     break;
                 }
                 case CSVariableType.csvtClassObject:
@@ -226,13 +238,24 @@ namespace CSXToolPlus.Objects
                 }
                 case CSVariableType.csvtInteger64:
                 {
-                    writer.WriteInt64((long)Data);
+                    if (writer.Info.FullVer == 3)
+                    {
+                        var obj = (Integer64Object)Data;
+                        obj.Write(writer);
+                    }
+                    else
+                    {
+                        writer.WriteInt64((long)Data);
+                    }
                     break;
                 }
                 case CSVariableType.csvtPointer:
                 {
-                    var obj = (PointerObject)Data;
-                    obj.Write(writer);
+                    if (writer.Info.FullVer == 3)
+                    {
+                        var obj = (PointerObject)Data;
+                        obj.Write(writer);
+                    }
                     break;
                 }
                 case CSVariableType.csvtClassObject:
