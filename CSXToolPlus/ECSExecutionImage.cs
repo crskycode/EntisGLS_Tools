@@ -779,7 +779,7 @@ namespace CSXToolPlus
                 var addr = long.Parse(match.Groups[1].Value, NumberStyles.HexNumber);
                 var text = match.Groups[2].Value.Unescape();
 
-                dict.Add(addr, text);
+                dict.TryAdd(addr, text);
             }
 
             reader.Close();
