@@ -112,10 +112,12 @@ namespace CSXToolPlus
             _sectionImportNativeFunc = new SectionImportNativeFunc();
         }
 
-        public void Load(string path)
+        public void Load(string path, uint fullVer)
         {
             var stream = File.OpenRead(path);
             var reader = new BinaryReader(stream);
+
+            _sectionHeader.FullVer = fullVer;
 
             ReadFileHeader(reader);
 

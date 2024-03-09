@@ -7,6 +7,7 @@ namespace CSXToolPlus.Sections
 {
     public class SectionHeader
     {
+        public uint FullVer { get; set; }
         public uint HeaderSize { get; set; }
         public uint Version { get; set; }
         public uint IntBase { get; set; }
@@ -120,6 +121,7 @@ namespace CSXToolPlus.Sections
         {
             return new VersionInfo
             {
+                FullVer = this.FullVer,
                 Version = this.Version,
                 IntBase = this.IntBase,
             };
