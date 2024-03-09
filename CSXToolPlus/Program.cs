@@ -7,15 +7,15 @@ namespace CSXToolPlus
     {
         static void Main(string[] args)
         {
-            if (args.Length != 2)
+            if (args.Length < 2)
             {
                 Console.WriteLine("CSXToolPlus v1.0");
                 Console.WriteLine("  created by Crsky");
                 Console.WriteLine();
                 Console.WriteLine("Usage:");
-                Console.WriteLine("  Export all text     : CSXToolPlus -a script.csx");
-                Console.WriteLine("  Disassemble         : CSXToolPlus -d script.csx");
-                Console.WriteLine("  Rebuild script      : CSXToolPlus -b script.csx");
+                Console.WriteLine("  Export all text     : CSXToolPlus -a script.csx [-v1|-v2|-v3]");
+                Console.WriteLine("  Disassemble         : CSXToolPlus -d script.csx [-v1|-v2|-v3]");
+                Console.WriteLine("  Rebuild script      : CSXToolPlus -b script.csx [-v1|-v2|-v3]");
                 Console.WriteLine();
                 Console.WriteLine("NOTE: The tool is compatible with EntisGL 2.x script format.");
                 Console.WriteLine();
@@ -27,6 +27,25 @@ namespace CSXToolPlus
             var mode = args[0];
             var path = Path.GetFullPath(args[1]);
 
+            // By default, we handle V3 format.
+            var fullVer = 3u;
+
+            if (args.Length > 2)
+            {
+                switch (args[2])
+                {
+                    case "-v1":
+                        fullVer = 1u;
+                        break;
+                    case "-v2":
+                        fullVer = 2u;
+                        break;
+                    case "-v3":
+                        fullVer = 3u;
+                        break;
+                }
+            }
+
             switch (mode)
             {
                 case "-a":
@@ -34,7 +53,7 @@ namespace CSXToolPlus
                     var txtPath = Path.ChangeExtension(path, ".txt");
 
                     var image = new ECSExecutionImage();
-                    image.Load(path);
+                    image.Load(path, fullVer);
                     image.ExportAllText(txtPath);
 
                     break;
@@ -44,7 +63,7 @@ namespace CSXToolPlus
                     var txtPath = Path.ChangeExtension(path, ".d.txt");
 
                     var image = new ECSExecutionImage();
-                    image.Load(path);
+                    image.Load(path, fullVer);
                     image.Disassemble(txtPath);
 
                     break;
@@ -55,7 +74,7 @@ namespace CSXToolPlus
                     var newPath = Path.ChangeExtension(path, ".new.csx");
 
                     var image = new ECSExecutionImage();
-                    image.Load(path);
+                    image.Load(path, fullVer);
                     image.ImportText(txtPath);
                     image.Save(newPath);
 
