@@ -74,6 +74,13 @@ namespace CSXToolPlus
 
                 ExecuteRange(startAddr, endAddr);
             }
+
+            // Maybe it's an older format, try disassemble whole image.
+            // Assuming there are no padding bytes.
+            if (_sectionFuncInfo.Functions.Count == 0)
+            {
+                ExecuteRange(0, _stream.Length);
+            }
         }
 
         public void ExecuteRange(long startAddr, long endAddr)
