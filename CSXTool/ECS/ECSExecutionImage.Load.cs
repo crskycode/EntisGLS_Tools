@@ -50,6 +50,9 @@ namespace CSXTool.ECS
                     case 0x20666E696B6E696Cu: // "linkinf"
                         ReadLinkInformationSection(reader, size);
                         break;
+                    case 0x0000000000000000u: // Padding or junk.
+                        reader.BaseStream.Position = reader.BaseStream.Length;
+                        break;
                     default:
                         throw new Exception("Unknow Record ID");
                 }
