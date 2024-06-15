@@ -201,7 +201,7 @@ namespace CSXToolPlus
 
             if (stream.Position != stream.Length)
             {
-                Console.WriteLine("WARNING: Some data is not parsed.");
+                Console.WriteLine("WARNING: Some data ({0} bytes) is not parsed.", stream.Length - stream.Position);
             }
 
             stream.Dispose();
