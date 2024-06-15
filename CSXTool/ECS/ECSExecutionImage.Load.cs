@@ -3,7 +3,6 @@ using CSXTool.ECS.Stuff;
 using CSXTool.Extensions;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 
 namespace CSXTool.ECS
