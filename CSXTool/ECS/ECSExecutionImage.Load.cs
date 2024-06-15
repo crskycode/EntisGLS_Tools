@@ -25,6 +25,13 @@ namespace CSXTool.ECS
             {
                 var position = reader.BaseStream.Position;
                 var id = reader.ReadUInt64();
+
+                if (id == 0)
+                {
+                    // Assuming that the junk data at the end of the file, we ignore it.
+                    break;
+                }
+
                 var size = reader.ReadInt64();
 
                 switch (id)
