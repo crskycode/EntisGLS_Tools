@@ -124,6 +124,13 @@ namespace CSXToolPlus
             while (stream.Position < stream.Length)
             {
                 var id = reader.ReadInt64();
+
+                if (id == 0)
+                {
+                    // Assuming that the junk data at the end of the file, we ignore it.
+                    break;
+                }
+
                 var length = reader.ReadInt64();
 
                 switch (id)
