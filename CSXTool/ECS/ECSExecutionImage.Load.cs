@@ -22,6 +22,11 @@ namespace CSXTool.ECS
 
             while (reader.BaseStream.Position < reader.BaseStream.Length)
             {
+                if (reader.BaseStream.Length - reader.BaseStream.Position < 8)
+                {
+                    break;
+                }
+
                 var id = reader.ReadUInt64();
 
                 if (id == 0)
