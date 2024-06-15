@@ -123,6 +123,11 @@ namespace CSXToolPlus
 
             while (stream.Position < stream.Length)
             {
+                if (stream.Length - stream.Position < 8)
+                {
+                    break;
+                }
+
                 var id = reader.ReadInt64();
 
                 if (id == 0)
