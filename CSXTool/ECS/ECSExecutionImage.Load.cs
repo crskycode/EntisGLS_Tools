@@ -64,7 +64,10 @@ namespace CSXTool.ECS
                 }
             }
 
-            Debug.Assert(reader.BaseStream.Position == reader.BaseStream.Length);
+            if (reader.BaseStream.Position != reader.BaseStream.Length)
+            {
+                Console.WriteLine("WARNING: Some data ({0} bytes) is not parsed.", reader.BaseStream.Length - reader.BaseStream.Position);
+            }
 
             reader.Dispose();
         }
