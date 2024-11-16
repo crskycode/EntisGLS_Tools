@@ -30,6 +30,11 @@ namespace CSXToolPlus
             return _commands.GetEnumerator();
         }
 
+        public IReadOnlyCollection<ECSExecutionImageCommandRecord> Commands
+        {
+            get => _commands;
+        }
+
         public int Count
         {
             get => _commands.Count;

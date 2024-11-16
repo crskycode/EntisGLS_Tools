@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -799,6 +800,308 @@ namespace CSXToolPlus
             return dict;
         }
 
+        private void RebuildImage(ECSExecutionImageAssembly assembly, BinaryReader reader, BinaryWriter writer, Dictionary<long, string> translation)
+        {
+            foreach (var cmd in assembly)
+            {
+                cmd.NewAddr = Convert.ToInt32(writer.BaseStream.Position);
+
+                if (cmd.Code == CSInstructionCode.csicLoad)
+                {
+                    if (translation.TryGetValue(cmd.Addr, out string? text))
+                    {
+                        // Found the translation, now write new command.
+
+                        reader.BaseStream.Position = cmd.Addr;
+
+                        var code = (CSInstructionCode)reader.ReadByte();
+                        var csomType = (CSObjectMode)reader.ReadByte();
+                        var csvtType = (CSVariableType)reader.ReadByte();
+
+                        if (code != CSInstructionCode.csicLoad || csomType != CSObjectMode.csomImmediate || csvtType != CSVariableType.csvtString)
+                        {
+                            throw new Exception("Wrong instruction code.");
+                        }
+
+                        var length = reader.ReadUInt32();
+
+                        if (length != 0x80000000)
+                        {
+                            writer.Write((byte)CSInstructionCode.csicLoad);
+                            writer.Write((byte)CSObjectMode.csomImmediate);
+                            writer.Write((byte)CSVariableType.csvtString);
+                            writer.WriteWideString(text);
+                        }
+                        else
+                        {
+                            // This is a reference to constant string. Write the original command.
+
+                            var addr = Convert.ToInt32(cmd.Addr);
+                            var size = Convert.ToInt32(cmd.Size);
+
+                            writer.Write(_sectionImageBuffer, addr, size);
+                        }
+                    }
+                    else
+                    {
+                        // No translation found. Write the original command.
+
+                        var addr = Convert.ToInt32(cmd.Addr);
+                        var size = Convert.ToInt32(cmd.Size);
+
+                        writer.Write(_sectionImageBuffer, addr, size);
+                    }
+                }
+                else
+                {
+                    // Write the original command.
+
+                    var addr = Convert.ToInt32(cmd.Addr);
+                    var size = Convert.ToInt32(cmd.Size);
+
+                    writer.Write(_sectionImageBuffer, addr, size);
+                }
+            }
+        }
+
+        private Tuple<string, int> ReadStringLiteral(BinaryReader reader)
+        {
+            var length = reader.ReadUInt32();
+
+            var index = -1;
+            string result;
+
+            if (length != 0x80000000)
+            {
+                reader.BaseStream.Position -= 4;
+                result = reader.ReadWideString();
+            }
+            else
+            {
+                index = reader.ReadInt32();
+                result = _sectionConstString.Strings[index].String;
+            }
+
+            return Tuple.Create(result, index);
+        }
+
+        private void FixImage(ECSExecutionImageAssembly assembly, BinaryReader reader, BinaryWriter writer, Dictionary<int, ECSExecutionImageCommandRecord> commandMap)
+        {
+            foreach (var cmd in assembly)
+            {
+                reader.BaseStream.Position = cmd.Addr;
+
+                switch (cmd.Code)
+                {
+                    case CSInstructionCode.csicEnter:
+                    {
+                        reader.ReadByte();
+                        ReadStringLiteral(reader);
+                        var numArgs = reader.ReadInt32();
+
+                        if (numArgs == -1)
+                        {
+                            reader.ReadByte();
+
+                            var patchOffset = reader.BaseStream.Position - cmd.Addr;
+                            var catchAddr = reader.ReadInt32();
+                            catchAddr += Convert.ToInt32(reader.BaseStream.Position);
+
+                            var targetCmd = commandMap[catchAddr];
+                            var newAddr = Convert.ToInt32(targetCmd.NewAddr - (cmd.NewAddr + patchOffset) - 4);
+
+                            writer.BaseStream.Position = cmd.NewAddr + patchOffset;
+                            writer.Write(newAddr);
+                        }
+
+                        break;
+                    }
+                    case CSInstructionCode.csicJump:
+                    {
+                        reader.ReadByte();
+
+                        var patchOffset = reader.BaseStream.Position - cmd.Addr;
+                        var addr = reader.ReadInt32();
+                        addr += Convert.ToInt32(reader.BaseStream.Position);
+
+                        var targetCmd = commandMap[addr];
+                        var newAddr = Convert.ToInt32(targetCmd.NewAddr - (cmd.NewAddr + patchOffset) - 4);
+
+                        writer.BaseStream.Position = cmd.NewAddr + patchOffset;
+                        writer.Write(newAddr);
+
+                        break;
+                    }
+                    case CSInstructionCode.csicCJump:
+                    {
+                        reader.ReadByte();
+                        reader.ReadByte();
+
+                        var patchOffset = reader.BaseStream.Position - cmd.Addr;
+                        var addr = reader.ReadInt32();
+                        addr += Convert.ToInt32(reader.BaseStream.Position);
+
+                        var targetCmd = commandMap[addr];
+                        var newAddr = Convert.ToInt32(targetCmd.NewAddr - (cmd.NewAddr + patchOffset) - 4);
+
+                        writer.BaseStream.Position = cmd.NewAddr + patchOffset;
+                        writer.Write(newAddr);
+
+                        break;
+                    }
+                    case CSInstructionCode.csicExCall:
+                    {
+                        reader.ReadInt32();
+
+                        var csomType = (CSObjectMode)reader.ReadByte();
+                        var csvtType = (CSVariableType)reader.ReadByte();
+
+                        if (csomType == CSObjectMode.csomImmediate && csvtType == CSVariableType.csvtInteger)
+                        {
+                            var patchOffset = reader.BaseStream.Position - cmd.Addr;
+                            var addr = reader.ReadInt32();
+                            addr += Convert.ToInt32(reader.BaseStream.Position);
+
+                            var targetCmd = commandMap[addr];
+                            var newAddr = Convert.ToInt32(targetCmd.NewAddr - (cmd.NewAddr + patchOffset) - 4);
+
+                            writer.BaseStream.Position = cmd.NewAddr + patchOffset;
+                            writer.Write(newAddr);
+                        }
+
+                        break;
+                    }
+                    case CSInstructionCode.codeJumpOffset32:
+                    {
+                        reader.ReadByte();
+
+                        var patchOffset = reader.BaseStream.Position - cmd.Addr;
+                        var addr = reader.ReadInt32();
+                        addr += cmd.Addr;
+
+                        var targetCmd = commandMap[addr];
+                        var newAddr = Convert.ToInt32(targetCmd.NewAddr - cmd.NewAddr - 5);
+
+                        writer.BaseStream.Position = cmd.NewAddr + patchOffset;
+                        writer.Write(newAddr);
+                        break;
+                    }
+                    case CSInstructionCode.codeCNJumpOffset32:
+                    case CSInstructionCode.codeCJumpOffset32:
+                    {
+                        reader.ReadByte();
+                        reader.ReadByte();
+
+                        var patchOffset = reader.BaseStream.Position - cmd.Addr;
+                        var addr = reader.ReadInt32();
+                        addr += cmd.Addr;
+
+                        var targetCmd = commandMap[addr];
+                        var newAddr = Convert.ToInt32(targetCmd.NewAddr - cmd.NewAddr - 6);
+
+                        writer.BaseStream.Position = cmd.NewAddr + patchOffset;
+                        writer.Write(newAddr);
+
+                        break;
+                    }
+                    case CSInstructionCode.codeCallImm32:
+                    {
+                        reader.ReadByte();
+
+                        var patchOffset = reader.BaseStream.Position - cmd.Addr;
+                        var addr = reader.ReadInt32();
+
+                        var targetCmd = commandMap[addr];
+
+                        writer.BaseStream.Position = cmd.NewAddr + patchOffset;
+                        writer.Write(targetCmd.NewAddr);
+
+                        break;
+                    }
+                }
+            }
+        }
+
+        private void FixReferences(Dictionary<int, ECSExecutionImageCommandRecord> commandMap)
+        {
+            for (var i = 0; i < _sectionFunction.Prologue.Elements.Count; i++)
+            {
+                _sectionFunction.Prologue.Elements[i] = Convert.ToUInt32(commandMap[Convert.ToInt32(_sectionFunction.Prologue.Elements[i])].NewAddr);
+            }
+
+            for (var i = 0; i < _sectionFunction.Epilogue.Elements.Count; i++)
+            {
+                _sectionFunction.Epilogue.Elements[i] = Convert.ToUInt32(commandMap[Convert.ToInt32(_sectionFunction.Epilogue.Elements[i])].NewAddr);
+            }
+
+            foreach (var item in _sectionFunction.FuncNames)
+            {
+                item.Address = Convert.ToUInt32(commandMap[Convert.ToInt32(item.Address)].NewAddr);
+            }
+
+            for (var i = 0; i < _sectionInitNakedFunc.NakedPrologue.Elements.Count; i++)
+            {
+                _sectionInitNakedFunc.NakedPrologue.Elements[i] = Convert.ToUInt32(commandMap[Convert.ToInt32(_sectionInitNakedFunc.NakedPrologue.Elements[i])]);
+            }
+
+            for (var i = 0; i < _sectionInitNakedFunc.NakedEpilogue.Elements.Count; i++)
+            {
+                _sectionInitNakedFunc.NakedEpilogue.Elements[i] = Convert.ToUInt32(commandMap[Convert.ToInt32(_sectionInitNakedFunc.NakedEpilogue.Elements[i])]);
+            }
+
+            foreach (var item in _sectionFuncInfo.Functions)
+            {
+                item.Header.Address = Convert.ToUInt32(commandMap[Convert.ToInt32(item.Header.Address)]);
+            }
+        }
+
+        private void UpdateStringLiteral(Dictionary<long, string> translation)
+        {
+            Console.WriteLine("Parsing code...");
+
+            var disasm = new ECSExecutionImageDisassembler(
+                _sectionImageBuffer,
+                _sectionFunction,
+                _sectionFuncInfo,
+                _sectionImportNativeFunc,
+                _sectionClassInfo,
+                _sectionConstString,
+                null);
+
+            try
+            {
+                disasm.ExecuteRange(0, _sectionImageBuffer.Length);
+            }
+            catch (Exception)
+            {
+                Console.WriteLine("ERROR: Unable to parse code section, the string literals will not be updated.");
+                return;
+            }
+
+            Console.WriteLine("Preparing to rebuild...");
+
+            var readStream = new MemoryStream(_sectionImageBuffer);
+            var codeReader = new BinaryReader(readStream);
+            var estimatedSize = _sectionImageBuffer.Length + (_sectionImageBuffer.Length / 2);
+
+            var writeStream = new MemoryStream(estimatedSize);
+            var codeWriter = new BinaryWriter(writeStream);
+
+            var commandMap = disasm.Assembly.Commands.ToDictionary(x => x.Addr);
+
+            Console.WriteLine("Rebuilding image...");
+
+            RebuildImage(disasm.Assembly, codeReader, codeWriter, translation);
+
+            Console.WriteLine("Fixing image...");
+
+            FixImage(disasm.Assembly, codeReader, codeWriter, commandMap);
+
+            Console.WriteLine("Fixing references...");
+
+            FixReferences(commandMap);
+        }
+
         private void UpdateConstantString(Dictionary<long, string> translation)
         {
             for (var i = 0; i < _sectionConstString.Strings.Count; i++)
@@ -812,11 +1115,18 @@ namespace CSXToolPlus
             }
         }
 
-        public void ImportText(string path)
+        public void ImportText(string path, bool updateStringLiterals)
         {
             Console.WriteLine("Loading translation...");
 
             var translation = LoadTranslation(path);
+
+            if (updateStringLiterals)
+            {
+                Console.WriteLine("Updating string literal...");
+
+                UpdateStringLiteral(translation);
+            }
 
             Console.WriteLine("Updating constant string...");
 

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 
 namespace CSXToolPlus
 {
@@ -9,13 +10,13 @@ namespace CSXToolPlus
         {
             if (args.Length < 2)
             {
-                Console.WriteLine("CSXToolPlus v1.3");
+                Console.WriteLine("CSXToolPlus v1.4");
                 Console.WriteLine("  created by Crsky");
                 Console.WriteLine();
                 Console.WriteLine("Usage:");
                 Console.WriteLine("  Export all text     : CSXToolPlus -a script.csx [-v1|-v2|-v3]");
                 Console.WriteLine("  Disassemble         : CSXToolPlus -d script.csx [-v1|-v2|-v3]");
-                Console.WriteLine("  Rebuild script      : CSXToolPlus -b script.csx [-v1|-v2|-v3]");
+                Console.WriteLine("  Rebuild script      : CSXToolPlus -b script.csx [-v1|-v2|-v3] [-f]");
                 Console.WriteLine();
                 Console.WriteLine("NOTE: The tool is compatible with EntisGL 2.x script format.");
                 Console.WriteLine();
@@ -73,9 +74,11 @@ namespace CSXToolPlus
                     var txtPath = Path.ChangeExtension(path, ".txt");
                     var newPath = Path.ChangeExtension(path, ".new.csx");
 
+                    var updateStringLiterals = args.Skip(2).Any(x => x == "-f");
+
                     var image = new ECSExecutionImage();
                     image.Load(path, fullVer);
-                    image.ImportText(txtPath);
+                    image.ImportText(txtPath, updateStringLiterals);
                     image.Save(newPath);
 
                     break;
