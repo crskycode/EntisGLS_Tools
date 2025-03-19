@@ -1097,6 +1097,8 @@ namespace CSXToolPlus
 
             FixImage(disasm.Assembly, codeReader, codeWriter, commandMap);
 
+            _sectionImageBuffer = writeStream.ToArray(); 
+
             Console.WriteLine("Fixing references...");
 
             FixReferences(commandMap);
