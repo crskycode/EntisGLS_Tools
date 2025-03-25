@@ -24,6 +24,8 @@
         csicCallMember = 19,
         csicCallNativeMember = 20,
         csicSwap = 21,
+        csicCreateBufferVSize = 23,
+        csicPointerToObject = 24,
         csicReferenceForPointer = 26,
         csicCallNativeFunction = 29,
 

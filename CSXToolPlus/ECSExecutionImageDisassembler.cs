@@ -46,7 +46,7 @@ namespace CSXToolPlus
             _sectionClassInfo = sectionClassInfo;
             _sectionConstString = sectionConstString;
             // For fast lookup
-            _funcMap = _sectionFuncInfo.Functions.ToDictionary(x => x.Header.Address);
+            _funcMap = _sectionFuncInfo.Functions.Where(x => x.Header.Bytes != 0).ToDictionary(x => x.Header.Address);
             // output
             _assembly = new ECSExecutionImageAssembly();
             _writer = writer;
@@ -69,6 +69,12 @@ namespace CSXToolPlus
 
             foreach (var e in ordered)
             {
+                // Ignore inline functions, this is not supported yet.
+                if (e.Header.Flags == 0x11)
+                {
+                    continue;
+                }
+
                 var startAddr = e.Header.Address;
                 var endAddr = startAddr + e.Header.Bytes;
 
@@ -160,17 +166,32 @@ namespace CSXToolPlus
                     case CSInstructionCode.csicSwap:
                         CommandSwap();
                         break;
+                    case CSInstructionCode.csicCreateBufferVSize:
+                        CommandCreateBufferVSize();
+                        break;
+                    case CSInstructionCode.csicPointerToObject:
+                        CommandPointerToObject();
+                        break;
                     case CSInstructionCode.csicReferenceForPointer:
                         CommandReferenceForPointer();
                         break;
                     case CSInstructionCode.csicCallNativeFunction:
                         CommandCallNativeFunction();
                         break;
+                    case CSInstructionCode.codeLoadMem:
+                        ShellCommandLoadMem();
+                        break;
+                    case CSInstructionCode.codeLoadMemBaseImm32:
+                        ShellCommandLoadMemBaseImm32();
+                        break;
                     case CSInstructionCode.codeLoadMemBaseIndex:
                         ShellCommandLoadMemBaseIndex();
                         break;
                     case CSInstructionCode.codeStoreMem:
                         ShellCommandStoreMem();
+                        break;
+                    case CSInstructionCode.codeStoreMemBaseImm32:
+                        ShellCommandStoreMemBaseImm32();
                         break;
                     case CSInstructionCode.codeStoreMemBaseIndex:
                         ShellCommandStoreMemBaseIndex();
@@ -183,6 +204,12 @@ namespace CSXToolPlus
                         break;
                     case CSInstructionCode.codeMoveReg:
                         ShellCommandMoveReg();
+                        break;
+                    case CSInstructionCode.codeCvtInt2Float:
+                        ShellCommandCvtInt2Float();
+                        break;
+                    case CSInstructionCode.codeSrlImm8:
+                        ShellCommandSrlImm8();
                         break;
                     case CSInstructionCode.codeSllImm8:
                         ShellCommandSllImm8();
@@ -199,17 +226,44 @@ namespace CSXToolPlus
                     case CSInstructionCode.codeLoadImm64:
                         ShellCommandLoadImm64();
                         break;
+                    case CSInstructionCode.codeNegFloat:
+                        ShellCommandNegFloat();
+                        break;
                     case CSInstructionCode.codeAddReg:
                         ShellCommandAddReg();
                         break;
                     case CSInstructionCode.codeSubReg:
                         ShellCommandSubReg();
                         break;
+                    case CSInstructionCode.codeMulReg:
+                        ShellCommandMulReg();
+                        break;
+                    case CSInstructionCode.codeDivReg:
+                        ShellCommandDivReg();
+                        break;
                     case CSInstructionCode.codeAndReg:
                         ShellCommandAndReg();
                         break;
                     case CSInstructionCode.codeOrReg:
                         ShellCommandOrReg();
+                        break;
+                    case CSInstructionCode.codeSllReg:
+                        ShellCommandSllReg();
+                        break;
+                    case CSInstructionCode.codeFAddReg:
+                        ShellCommandFAddReg();
+                        break;
+                    case CSInstructionCode.codeFSubReg:
+                        ShellCommandFSubReg();
+                        break;
+                    case CSInstructionCode.codeFMulReg:
+                        ShellCommandFMulReg();
+                        break;
+                    case CSInstructionCode.codeFDivReg:
+                        ShellCommandFDivReg();
+                        break;
+                    case CSInstructionCode.codeIDiv32Reg:
+                        ShellCommandIDiv32Reg();
                         break;
                     case CSInstructionCode.codeCmpNeReg:
                         ShellCommandCmpNeReg();
@@ -228,6 +282,15 @@ namespace CSXToolPlus
                         break;
                     case CSInstructionCode.codeCmpGeReg:
                         ShellCommandCmpGeReg();
+                        break;
+                    case CSInstructionCode.codeCmpCReg:
+                        ShellCommandCmpCReg();
+                        break;
+                    case CSInstructionCode.codeFCmpLtReg:
+                        ShellCommandFCmpLtReg();
+                        break;
+                    case CSInstructionCode.codeFCmpGeReg:
+                        ShellCommandFCmpGeReg();
                         break;
                     case CSInstructionCode.codeJumpOffset32:
                         ShellCommandJumpOffset32();
@@ -1013,7 +1076,22 @@ namespace CSXToolPlus
             Line($"Swap #{index1}, #{index2}");
         }
 
-        // 0x16 : ReferenceForPointer
+        // 0x17 : CreateBufferVSize
+        // Desc : 
+        private void CommandCreateBufferVSize()
+        {
+            Line($"CreateBufferVSize");
+        }
+
+        // 0x18 : PointerToObject
+        // Desc : 
+        private void CommandPointerToObject()
+        {
+            var varType = _reader.ReadInt32();
+            Line($"PointerToObject {varType}");
+        }
+
+        // 0x1A : ReferenceForPointer
         // Desc : 
         private void CommandReferenceForPointer()
         {
@@ -1034,6 +1112,25 @@ namespace CSXToolPlus
             Line($"CallNativeFunction \"{_sectionImportNativeFunc.NativeFunc.Names.Elements[funcIndex]}\" <{argCount}>");
         }
 
+        // 0x80 : LoadMem
+        // Desc : 
+        private void ShellCommandLoadMem()
+        {
+            var @base = _reader.ReadByte();
+            var reg = _reader.ReadByte();
+            Line($"LoadMem {@base}, %{reg}");
+        }
+
+        // 0x81 : LoadMemBaseImm32
+        // Desc : 
+        private void ShellCommandLoadMemBaseImm32()
+        {
+            var @base = _reader.ReadByte();
+            var reg = _reader.ReadByte();
+            var mem = _reader.ReadInt32();
+            Line($"LoadMemBaseImm32 %{@base}, %{reg}, {mem}");
+        }
+
         // 0x82 : LoadMemBaseIndex
         // Desc : 
         private void ShellCommandLoadMemBaseIndex()
@@ -1051,6 +1148,16 @@ namespace CSXToolPlus
             var data_type = _reader.ReadByte();
             var reg = _reader.ReadByte();
             Line($"StoreMem {data_type}, %{reg}");
+        }
+
+        // 0x85 : StoreMemBaseImm32
+        // Desc : 
+        private void ShellCommandStoreMemBaseImm32()
+        {
+            var @base = _reader.ReadByte();
+            var reg = _reader.ReadByte();
+            var mem = _reader.ReadInt32();
+            Line($"StoreMemBaseImm32 %{@base}, %{reg}, {mem}");
         }
 
         // 0x86 : StoreMemBaseIndex
@@ -1090,6 +1197,25 @@ namespace CSXToolPlus
             var dst = _reader.ReadByte();
             var src = _reader.ReadByte();
             Line($"MoveReg %{dst}, %{src}");
+        }
+
+        // 0x93 : CvtInt2Float
+        // Desc : 
+        private void ShellCommandCvtInt2Float()
+        {
+            var dst = _reader.ReadByte();
+            var src = _reader.ReadByte();
+            Line($"CvtInt2Float %{dst}, %{src}");
+        }
+
+        // 0x94 : SrlImm8
+        // Desc : 
+        private void ShellCommandSrlImm8()
+        {
+            var dst = _reader.ReadByte();
+            var src = _reader.ReadByte();
+            var num = _reader.ReadByte();
+            Line($"SrlImm8 %{dst}, %{src}, {num}");
         }
 
         // 0x96 : SllImm8
@@ -1139,6 +1265,14 @@ namespace CSXToolPlus
             Line($"LoadImm64 %{reg}, {val}");
         }
 
+        // 0x9E : NegFloat
+        // Desc : 
+        private void ShellCommandNegFloat()
+        {
+            var dst = _reader.ReadByte();
+            Line($"NegFloat %{dst}");
+        }
+
         // 0xA0 : AddReg
         // Desc : 
         private void ShellCommandAddReg()
@@ -1155,6 +1289,24 @@ namespace CSXToolPlus
             var dst = _reader.ReadByte();
             var src = _reader.ReadByte();
             Line($"SubReg %{dst}, %{src}");
+        }
+
+        // 0xA2 : MulReg
+        // Desc : 
+        private void ShellCommandMulReg()
+        {
+            var dst = _reader.ReadByte();
+            var src = _reader.ReadByte();
+            Line($"MulReg %{dst}, %{src}");
+        }
+
+        // 0xA3 : DivReg
+        // Desc : 
+        private void ShellCommandDivReg()
+        {
+            var dst = _reader.ReadByte();
+            var src = _reader.ReadByte();
+            Line($"DivReg %{dst}, %{src}");
         }
 
         // 0xA5 : AndReg
@@ -1175,6 +1327,60 @@ namespace CSXToolPlus
             Line($"OrReg %{dst}, %{src}");
         }
 
+        // 0xAA : SllReg
+        // Desc : 
+        private void ShellCommandSllReg()
+        {
+            var dst = _reader.ReadByte();
+            var src = _reader.ReadByte();
+            Line($"SllReg %{dst}, %{src}");
+        }
+
+        // 0xB0 : FAddReg
+        // Desc : 
+        private void ShellCommandFAddReg()
+        {
+            var dst = _reader.ReadByte();
+            var src = _reader.ReadByte();
+            Line($"FAddReg %{dst}, %{src}");
+        }
+
+        // 0xB1 : FSubReg
+        // Desc : 
+        private void ShellCommandFSubReg()
+        {
+            var dst = _reader.ReadByte();
+            var src = _reader.ReadByte();
+            Line($"FSubReg %{dst}, %{src}");
+        }
+
+        // 0xB2 : FMulReg
+        // Desc : 
+        private void ShellCommandFMulReg()
+        {
+            var dst = _reader.ReadByte();
+            var src = _reader.ReadByte();
+            Line($"FMulReg %{dst}, %{src}");
+        }
+
+        // 0xB3 : FDivReg
+        // Desc : 
+        private void ShellCommandFDivReg()
+        {
+            var dst = _reader.ReadByte();
+            var src = _reader.ReadByte();
+            Line($"FDivReg %{dst}, %{src}");
+        }
+
+        // 0xBB : IDiv32Reg
+        // Desc : 
+        private void ShellCommandIDiv32Reg()
+        {
+            var dst = _reader.ReadByte();
+            var src = _reader.ReadByte();
+            Line($"IDiv32Reg %{dst}, %{src}");
+        }
+
         // 0xC0 : CmpNeReg
         // Desc : 
         private void ShellCommandCmpNeReg()
@@ -1190,7 +1396,7 @@ namespace CSXToolPlus
         {
             var dst = _reader.ReadByte();
             var src = _reader.ReadByte();
-            Line($"CmpLtReg %{dst}, %{src}");
+            Line($"CmpEqReg %{dst}, %{src}");
         }
 
         // 0xC2 : CmpLtReg
@@ -1227,6 +1433,33 @@ namespace CSXToolPlus
             var dst = _reader.ReadByte();
             var src = _reader.ReadByte();
             Line($"CmpGeReg %{dst}, %{src}");
+        }
+
+        // 0xC6 : CmpCReg
+        // Desc : 
+        private void ShellCommandCmpCReg()
+        {
+            var dst = _reader.ReadByte();
+            var src = _reader.ReadByte();
+            Line($"CmpCReg %{dst}, %{src}");
+        }
+
+        // 0xCA : FCmpLtReg
+        // Desc : 
+        private void ShellCommandFCmpLtReg()
+        {
+            var dst = _reader.ReadByte();
+            var src = _reader.ReadByte();
+            Line($"FCmpLtReg %{dst}, %{src}");
+        }
+
+        // 0xCD : FCmpGeReg
+        // Desc : 
+        private void ShellCommandFCmpGeReg()
+        {
+            var dst = _reader.ReadByte();
+            var src = _reader.ReadByte();
+            Line($"FCmpGeReg %{dst}, %{src}");
         }
 
         // 0xD0 : JumpOffset32
