@@ -87,7 +87,7 @@ namespace CSXToolPlus
 
         static void Main(string[] args)
         {
-            Console.WriteLine("CSXToolPlus v1.4");
+            Console.WriteLine("CSXToolPlus v1.5");
             Console.WriteLine("  created by Crsky");
             Console.WriteLine();
 
