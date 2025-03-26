@@ -48,7 +48,7 @@ jobs:
 
       # 7. Upload the zipped file as an artifact
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: app-package
           path: ./app-package.zip
