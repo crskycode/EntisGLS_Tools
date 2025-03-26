@@ -1,0 +1,54 @@
+name: Build and Package .NET 8 App with Native AOT (Windows x64)
+
+on:
+  # Trigger conditions: Run when code is pushed to the main branch or a PR is created for the main branch
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      # 1. Checkout the code
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # 2. Set up .NET SDK version 8.x
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: 8.x
+
+      # 3. Restore project dependencies
+      - name: Restore dependencies
+        run: dotnet restore
+
+      # 4. Publish the project with Native AOT (Windows x64)
+      - name: Publish project with Native AOT (Windows x64)
+        run: |
+          dotnet publish --configuration Release `
+                         --runtime win-x64 `
+                         --self-contained true `
+                         -p:PublishAot=true `
+                         --output ./publish
+
+      # 5. Remove PDB files from the publish folder
+      - name: Remove PDB files
+        run: |
+          Get-ChildItem -Path ./publish -Filter *.pdb -Recurse | Remove-Item -Force
+
+      # 6. Zip the published files
+      - name: Zip published files
+        run: Compress-Archive -Path ./publish/* -DestinationPath ./app-package.zip
+
+      # 7. Upload the zipped file as an artifact
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: app-package
+          path: ./app-package.zip
