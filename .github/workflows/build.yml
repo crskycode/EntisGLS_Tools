@@ -42,13 +42,9 @@ jobs:
         run: |
           Get-ChildItem -Path ./publish -Filter *.pdb -Recurse | Remove-Item -Force
 
-      # 6. Zip the published files
-      - name: Zip published files
-        run: Compress-Archive -Path ./publish/* -DestinationPath ./app-package.zip
-
-      # 7. Upload the zipped file as an artifact
+      # 7. Upload the artifact
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: app-package
-          path: ./app-package.zip
+          path: ./publish
