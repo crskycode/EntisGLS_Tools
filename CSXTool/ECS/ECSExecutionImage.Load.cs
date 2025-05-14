@@ -22,7 +22,7 @@ namespace CSXTool.ECS
 
             while (reader.BaseStream.Position < reader.BaseStream.Length)
             {
-                if (reader.BaseStream.Length - reader.BaseStream.Position < 8)
+                if (reader.BaseStream.Length - reader.BaseStream.Position < 16)
                 {
                     break;
                 }
