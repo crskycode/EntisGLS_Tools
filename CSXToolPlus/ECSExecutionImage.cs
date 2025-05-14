@@ -124,7 +124,7 @@ namespace CSXToolPlus
 
             while (stream.Position < stream.Length)
             {
-                if (stream.Length - stream.Position < 8)
+                if (stream.Length - stream.Position < 16)
                 {
                     break;
                 }
